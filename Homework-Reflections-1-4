@@ -2,11 +2,15 @@ Homework reflection 1
 
 1. In Coding Quiz 1, you are asked to find the distance of the farthest match in a set.  Is this farthest match distance too far to be a meaningful match?  How can you decide this?
 
+For the context of this problem given the data, the match is still meaningful. When looking at a histogram distribution of the y value differences, there seemed to be an almost bimodal distribution. This infers there is a confounding variable not accounted for in the analysis.
+
 2. In Coding Quiz 1, there are two approaches to matching: 
 (A) Picking the best match X = 0 corresponding to each X = 1 using Z values.
 (B) Using radius_neighbors to pick all matches X = 0 within a distance or 0.2 of each X = 1.
 
 Invent your own type of matching similar to 1 and 2 (or look one up on the internet), which has a different way to pick the matches in X = 0.  Clearly explain the approach you invented or found.
+
+Coarsened Exact Matching (CEM) is an effective method at discarding unmatched units and yielding a greater exact match through strict conditions. It does this by binning covariates before performing exact match. Where exact matching fails on higher dimensional data, the coarsening (binning) allows continuous variables to be grouped together before being matched. The CEM method is much simpler since it has clear definitions, but is likely to perform worse than KNeighbors or Radius matching.
 
 Homework reflection 2
 
