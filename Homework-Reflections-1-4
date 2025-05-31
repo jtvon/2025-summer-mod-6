@@ -16,7 +16,11 @@ Homework reflection 2
 
 1. Invent an example situation that would use fixed effects.
 
+An example that comes to mind would be finding what types of engines are more fuel efficient for vehicles. Variables that can effect fuel economy would be weight, type of engine, and transmission type. Automatic and Manual vehicles can have very different effects since they have different gear ratio's. Driving style also plays an impact, one might say that vehicles with manual transmission tend to be driven more aggressively. Running Fixed Effect regression on a dataset split out by transmission type will give you a more accurate representation of fuel economy. Compared to a single equation for all.
+
 2. Write a Python program that performs a bootstrap simulation to find the variance in the mean of the Pareto distribution when different samples are taken.  Explain what you had to do for this.  As you make the full sample size bigger (for the same distribution), what happens to the variance of the mean of the samples?  Does it stay about the same, get smaller, or get bigger?
+
+A Pareto distribution is a probability distribution often used to model phenomena where a small number of occurences account for the majority of the effect, such as wealth. Programming the distribution was fairly wasy since numpy as a function that synthesizes a pareto distibution, all that's needed is the size and shape of the distribution. Size being the number of samples and the shape governing the fatness of the tail, requiring the value be larger than 0. The bootstrap simulation selects a value from the pareto distribution and replaces it. This allows the random samples to be selected at equal probability. Given the number of simulations to run, the mean is taken and stored for calculation of the variance. As the sample size increases, the variance in sample means decreases. 
 
 Homework reflection 3
 
