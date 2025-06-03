@@ -20,13 +20,30 @@ An example that comes to mind would be finding what types of engines are more fu
 
 2. Write a Python program that performs a bootstrap simulation to find the variance in the mean of the Pareto distribution when different samples are taken.  Explain what you had to do for this.  As you make the full sample size bigger (for the same distribution), what happens to the variance of the mean of the samples?  Does it stay about the same, get smaller, or get bigger?
 
-A Pareto distribution is a probability distribution often used to model phenomena where a small number of occurences account for the majority of the effect, such as wealth. Programming the distribution was fairly wasy since numpy as a function that synthesizes a pareto distibution, all that's needed is the size and shape of the distribution. Size being the number of samples and the shape governing the fatness of the tail, requiring the value be larger than 0. The bootstrap simulation selects a value from the pareto distribution and replaces it. This allows the random samples to be selected at equal probability. Given the number of simulations to run, the mean is taken and stored for calculation of the variance. As the sample size increases, the variance in sample means decreases. 
+A Pareto distribution is a probability distribution often used to model phenomena where a small number of occurences account for the majority of the effect, such as wealth. Programming the distribution was fairly easy since numpy as a function that synthesizes a pareto distibution, all that's needed is the size and shape of the distribution. Size being the number of samples and the shape governing the fatness of the tail, requiring the value be larger than 0. The bootstrap simulation selects a value from the pareto distribution and replaces it. This allows the random samples to be selected at equal probability. Given the number of simulations to run, the mean is taken and stored for calculation of the variance. As the sample size increases, the variance in sample means decreases. 
 
 Homework reflection 3
 
 1. In the event study in Coding Quiz 3, how would we go about testing for a change in the second derivative as well?
 
+We would need to account for a change in slope over time in our equation. This can be done by adding a quadratic term to the regression equation called B^2. This term allows us to track the slope curvature before and after the event. If the coefficient is significanlyt different from zero, then we can conclude that the second derivative has changed.
+
 2. Create your own scenario that illustrates differences-in-differences. Describe the story behind the data and show whether there is a nonzero treatment effect.
+
+Suppose there are two racing teams, Team A and Team B. Team A adopts a new tire design at the start of the season, while Team B continues using the old design. We collect average lap times for both teams before and after the new tire is introduced.
+
+Before the new tire:
+- Team A average lap time: 70 seconds
+- Team B average lap time: 71 seconds
+
+After the new tire:
+- Team A average lap time: 68 seconds
+- Team B average lap time: 70.5 seconds
+
+The difference-in-differences estimate is:
+[(68 - 70) - (70.5 - 71)] = (-2) - (-0.5) = -1.5 seconds
+
+This suggests the new tire reduced lap times by 1.5 seconds more for Team A than any general improvement seen by Team B, indicating a nonzero treatment effect from the new tire design.
 
 Homework reflection 4
 
