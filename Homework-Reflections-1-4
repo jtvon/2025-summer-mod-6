@@ -49,4 +49,97 @@ Homework reflection 4
 
 1. The Coding Quiz gives two options for instrumental variables.  For the second item (dividing the range of W into multiple ranges), explain how you did it, show your code, and discuss any issues you encountered.
 
+Might have sot this question wrong on the quiz, therefore decided to rewrite and re-evaluate the question. Originally I mistook the problem as a Differences in Differences problem and calculated for the effect. Re-evaluating for the instrumental variables effect allows me to see from a different perspective. For the re-evaluation, the main goal was to calculate the effect over multiple ranges of W of varying distance. This was done by establishing a range of N values that would serve as the number of bins. The effect within each bin was measured, added to a list and then averaged over the total numver of bins. The avg_effects were then plotted on a line chart to showcase the change in effect based on the number of bins.
+
+'''Python
+import matplotlib.pyplot as plt
+
+# Try different values of N and plot the average effect for each
+N_values = range(5, 100)
+avg_effects = []
+
+for N in N_values:
+    w_min = df_1['W'].min()
+    w_max = df_1['W'].max()
+    w_edges = np.linspace(w_min, w_max, N + 1)
+    effects = []
+
+    for i in range(N):
+        w_lo = w_edges[i]
+        w_hi = w_edges[i + 1]
+        mask = (df_1['W'] >= w_lo) & (df_1['W'] < w_hi)
+        df_bin = df_1[mask]
+        # Only compute if both Z=0 and Z=1 are present
+        if df_bin['Z'].nunique() == 2:
+            y_1 = df_bin['Y'][df_bin['Z'] == 1].mean()
+            y_0 = df_bin['Y'][df_bin['Z'] == 0].mean()
+            x_1 = df_bin['X'][df_bin['Z'] == 1].mean()
+            x_0 = df_bin['X'][df_bin['Z'] == 0].mean()
+            x_diff = x_1 - x_0
+            if x_diff != 0:
+                effect = (y_1 - y_0) / x_diff
+                effects.append(effect)
+    if effects:
+        avg_effect = np.mean(effects)
+    else:
+        avg_effect = np.nan
+
+    avg_effects.append(avg_effect)
+
+# Plot the results
+plt.figure(figsize=(8, 5))
+plt.plot(N_values, avg_effects, marker='o')
+plt.xlabel('Number of W bins (N)')
+plt.ylabel('Average Effect')
+plt.title('Average Effect vs. Number of W Bins')
+plt.grid(True)
+plt.show()
+'''
+
 2. Plot the college outcome (Y) vs. the test score (X) in a small range of test scores around 80. On the plot, compare it with the Y probability predicted by logistic regression. The ground truth Y value is 0 or 1; don't just plot 0 or 1 - that will make it unreadable.  Find some way to make it look better than that.
+
+'''Python
+import statsmodels.api as sm
+
+for df, label in zip([df_2, df_3], ['df_2', 'df_3']):
+    # Create a binary outcome for logistic regression (e.g., Y > median(Y))
+    y_binary = (df['Y'] > df['Y'].median()).astype(int)
+    df['running'] = df['X'] - 80
+    df['treat'] = (df['X'] >= 80).astype(int)
+
+    # Model: Y_binary ~ treat + running
+    X_rdd = sm.add_constant(df[['treat', 'running']])
+    model_logit = sm.Logit(y_binary, X_rdd).fit(disp=0)
+
+    print(f"\nLogistic Regression Discontinuity Summary for {label}:")
+    print(model_logit.summary())
+
+    # Plotting in a small range around X=80
+    x_window = 2
+    mask = (df['X'] >= 80 - x_window) & (df['X'] <= 80 + x_window)
+    df_window = df[mask].copy()
+    y_window = y_binary[mask]
+
+    plt.figure(figsize=(8, 5))
+
+    # Plot moving average of Y (smoothed ground truth)
+    df_window_sorted = df_window.sort_values('X')
+    window_size = 10  # number of points for moving average
+    y_smooth = df_window_sorted['Y'].rolling(window=window_size, center=True, min_periods=1).mean()
+    plt.plot(df_window_sorted['X'], y_smooth, '.-', color='gray', label='Smoothed Y (moving avg)')
+
+    # Plot predicted probability from logistic regression
+    x_vals = np.linspace(80 - x_window, 80 + x_window, 200)
+    running_vals = x_vals - 80
+    treat_vals = (x_vals >= 80).astype(int)
+    X_pred = np.column_stack([np.ones_like(x_vals), treat_vals, running_vals])
+    y_pred_prob = model_logit.predict(X_pred)
+    plt.plot(x_vals, y_pred_prob, color='purple', label='Logistic Regression Prediction')
+
+    plt.axvline(80, color='red', linestyle='--', label='Cutoff at X=80')
+    plt.xlabel('Test Score (X)')
+    plt.ylabel('College Outcome (Y)')
+    plt.title(f'College Outcome vs. Test Score near X=80 ({label})')
+    plt.legend()
+    plt.show()
+'''
