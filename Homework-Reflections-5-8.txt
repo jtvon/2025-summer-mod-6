@@ -8,7 +8,15 @@ A negative feedback loop means that one thing increases another while the second
 
 Remember that we are using directed acyclic graphs where two things cannot directly cause each other.
 
+Sweat(t) ---> Body temp(t+1)
+
+Body temp(t) ---> Sweat(t+1)
+
 2. Describe an example of a positive feedback loop.  This means that one things increases another while the second things also increases the first.
+
+A positive feedback loop could be the following:
+
+When a person practices a skill, they become more proficient at it. As they become more proficient, they are more likely to practice the skill again, leading to further improvement.
 
 3. Draw a diagram for the following situation:
 
@@ -16,11 +24,54 @@ Lightning storms frighten away deer and bears, decreasing their population, and 
 Bears eat deer, decreasing their population.
 Deer eat flowers, decreasing their population.
 
+            Lightning Storm --> Flowers
+                   / \         ^
+                  /   \       /
+                 v     v     /  
+            Bears ----> Deer
+
 Write a dataset that simulates this situation.  (Show the code.) Include noise / randomness in all cases.
+
+'''python
+# Create a dataset from the above DAG chart
+import numpy as np
+import pandas as pd
+
+num = 100 
+lightning = 3 * np.random.uniform(1,5, num)
+bear = 4 * np.random.uniform(2,5,num) -  .3 * lightning
+deer = 7 * np.random.uniform(1,5,num) - .3 * bear - .2 * lightning
+flower = 5 * np.random.uniform(5,10,num) - .4 * deer + .2 * lightning
+df = pd.DataFrame({'lightning': lightning, 'bear': bear, 'deer': deer, 'flower': flower})
+'''
 
 Identify a backdoor path with one or more confounders for the relationship between deer and flowers.
 
+There are a couple back door paths with lightning acting as the confounder in both: 
+
+Deer <-- Bear <-- Lightning --> Flowers
+
+Deer <-- Lightning --> Flowers
+
 4. Draw a diagram for a situation of your own invention.  The diagram should include at least four nodes, one confounder, and one collider.  Be sure that it is acyclic (no loops).  Which node would say is most like a treatment (X)?  Which is most like an outcome (Y)?
+
+Distance to destination affects travel time. Distance also affects average speed driven. 
+The greater the distance, there is a greater chance of traffic negatively impacting travel time.
+The higher the average speed driven positively impacts the travel time. Increase in traffic negatively impacts average speed.
+
+            Distance ----> Traffic
+                |  \        /
+                |   \      /
+                |    v    v
+                |    Speed
+                |      / 
+                |     /  
+                v    v 
+            Travel Time
+
+Treatment: Distance
+
+Outcome: Travel Time
 
 Homework Reflection 6
 
