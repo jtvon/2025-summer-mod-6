@@ -8,6 +8,23 @@ A negative feedback loop means that one thing increases another while the second
 
 Remember that we are using directed acyclic graphs where two things cannot directly cause each other.
 
+2. Describe an example of a positive feedback loop.  This means that one things increases another while the second things also increases the first.
+
+3. Draw a diagram for the following situation:
+
+Lightning storms frighten away deer and bears, decreasing their population, and cause flowers to grow, increasing their population.
+Bears eat deer, decreasing their population.
+Deer eat flowers, decreasing their population.
+Homework Reflection 5
+
+1. Draw a diagram for the following negative feedback loop:
+
+Sweating causes body temperature to decrease.  High body temperature causes sweating.
+
+A negative feedback loop means that one thing increases another while the second thing decreases the first.
+
+Remember that we are using directed acyclic graphs where two things cannot directly cause each other.
+
 Sweat(t) ---> Body temp(t+1)
 
 Body temp(t) ---> Sweat(t+1)
@@ -76,5 +93,77 @@ Outcome: Travel Time
 Homework Reflection 6
 
 1. What is a potential problem with computing the Marginal Treatment Effect simply by comparing each untreated item to its counterfactual and taking the maximum difference?  (Hint: think of statistics here.  Consider that only the most extreme item ends up being used to estimate the MTE.  That's not necessarily a bad thing; the MTE is supposed to come from the untreated item that will produce the maximum effect.  But there is nevertheless a problem.)
+Possible answer: We are likely to find the item with the most extreme difference, which may be high simply due to randomness.
+(Please explain / justify this answer, or give a different one if you can think of one.)
+
+The problem is that by only considering the maximum difference, we may be ignoring other untreated items that could provide valuable information about the treatment effect. This could lead to an overestimation of the MTE if the maximum difference is an outlier.
 
 2. Propose a solution that remedies this problem and write some code that implements your solution.  It's very important here that you clearly explain what your solution will do.
+Possible answer: maybe we could take the 90th percentile of the treatment effect and use it as a proxy for the Marginal Treatment Effect.
+(Either code this answer or choose a different one.)
+
+This dataset used for this solution is the same one used for the Week 6 coding quiz. The 90th percentile solution is implemented below by taking the 90th percentile of the treatment effect among the untreated items. This provides a more robust estimate of the Marginal Treatment Effect by considering a broader range of effects rather than just the maximum.
+
+'''python
+from sklearn.neighbors import NearestNeighbors
+
+# Assume df has columns: X (treatment), Y (outcome), Z (confounder)
+# Separate treated and untreated
+T = df[df['X'] == 1].copy()
+U = df[df['X'] == 0].copy()
+
+# Fit NearestNeighbors on Z for each group
+t_nn = NearestNeighbors(n_neighbors=1).fit(U[['Z']])
+u_nn = NearestNeighbors(n_neighbors=1).fit(T[['Z']])
+
+# For each treated, find nearest untreated (counterfactual)
+dist_T, idx_T = t_nn.kneighbors(T[['Z']])
+T['cf_idx'] = idx_T.flatten()
+T['cf_Y'] = U.iloc[T['cf_idx']]['Y'].values
+T['effect'] = T['Y'] - T['cf_Y']
+
+# For each untreated, find nearest treated (counterfactual)
+dist_U, idx_U = u_nn.kneighbors(U[['Z']])
+U['cf_idx'] = idx_U.flatten()
+U['cf_Y'] = T.iloc[U['cf_idx']]['Y'].values
+U['effect'] = U['cf_Y'] - U['Y']
+
+# Average Treatment Effect (ATE): average of all effects (both directions)
+ate = pd.concat([T['effect'], U['effect']]).mean()
+
+# Average Treatment Effect on the Treated (ATT): average effect for treated
+att = T['effect'].mean()
+
+# Average Treatment Effect on the Untreated (ATU): average effect for untreated
+atu = U['effect'].mean()
+
+# Marginal Treatment Effect: maximum effect among untreated and 90th percentile among untreated
+mte = U['effect'].max()
+mte_90th_percent = U['effect'].quantile(0.9)
+
+print(f"ATE: {ate:.3f}")
+print(f"ATT: {att:.3f}")
+print(f"ATU: {atu:.3f}")
+print(f"Marginal Treatment Effect: {mte:.3f}")
+print(f"90th Percentile of Marginal Treatment Effect: {mte_90th_percent:.3f}")
+'''
+
+Homework Reflection 7
+
+1. Create a linear regression model involving a confounder that is left out of the model.  Show whether the true correlation between $$X$$ and $$Y$$ is overestimated, underestimated, or neither.  Explain in words why this is the case for the given coefficients you have chosen.
+
+2. Perform a linear regression analysis in which one of the coefficients is zero, e.g.
+
+W = [noise]
+X = [noise]
+Y = 2 * X + [noise]
+
+And compute the p-value of a coefficient - in this case, the coefficient of W.  
+(This is the likelihood that the estimated coefficient would be as high or low as it is, given that the actual coefficient is zero.)
+If the p-value is less than 0.05, this ordinarily means that we judge the coefficient to be nonzero (incorrectly, in this case.)
+Run the analysis 1000 times and report the best (smallest) p-value.  
+If the p-value is less than 0.05, does this mean the coefficient actually is nonzero?  What is the problem with repeating the analysis?
+
+Homework Reflection 8
+
+Include the code you used to solve the two coding quiz problems and write about the obstacles / challenges / insights you encountered while solving them.
