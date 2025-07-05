@@ -152,6 +152,14 @@ Homework Reflection 7
 
 1. Create a linear regression model involving a confounder that is left out of the model.  Show whether the true correlation between $$X$$ and $$Y$$ is overestimated, underestimated, or neither.  Explain in words why this is the case for the given coefficients you have chosen.
 
+    C = np.random.normal(0, 1, n_obs)
+    X = 2 + 0.8 * C + np.random.normal(0, 0.5, n_obs)
+    Y = 1 + 1.2 * X + 0.6 * C + np.random.normal(0, 0.5, n_obs)
+
+Above are the values chosen for the confounder C, X, and Y. The correlation between X and Y is overestimated when the confounder is left out of the model. 
+This is because the confounder C positively affects both X and Y, leading to a spurious correlation between them when C is not included. 
+The model without the confounder will attribute the effect of C to the relationship between X and Y, thus inflating the estimated correlation.
+
 2. Perform a linear regression analysis in which one of the coefficients is zero, e.g.
 
 W = [noise]
@@ -163,6 +171,8 @@ And compute the p-value of a coefficient - in this case, the coefficient of W.
 If the p-value is less than 0.05, this ordinarily means that we judge the coefficient to be nonzero (incorrectly, in this case.)
 Run the analysis 1000 times and report the best (smallest) p-value.  
 If the p-value is less than 0.05, does this mean the coefficient actually is nonzero?  What is the problem with repeating the analysis?
+
+No, just because the p-value is small doesn't mean the coefficient is non-zero. The issue with repeating the analysis is that it can lead to a Type 1 error, where we incorrectly reject the null hypothesis simply due to random chance. The more we run the analysis, the higher chance we have of finding a smaller p-value.
 
 Homework Reflection 8
 
