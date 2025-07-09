@@ -8,23 +8,6 @@ A negative feedback loop means that one thing increases another while the second
 
 Remember that we are using directed acyclic graphs where two things cannot directly cause each other.
 
-2. Describe an example of a positive feedback loop.  This means that one things increases another while the second things also increases the first.
-
-3. Draw a diagram for the following situation:
-
-Lightning storms frighten away deer and bears, decreasing their population, and cause flowers to grow, increasing their population.
-Bears eat deer, decreasing their population.
-Deer eat flowers, decreasing their population.
-Homework Reflection 5
-
-1. Draw a diagram for the following negative feedback loop:
-
-Sweating causes body temperature to decrease.  High body temperature causes sweating.
-
-A negative feedback loop means that one thing increases another while the second thing decreases the first.
-
-Remember that we are using directed acyclic graphs where two things cannot directly cause each other.
-
 Sweat(t) ---> Body temp(t+1)
 
 Body temp(t) ---> Sweat(t+1)
