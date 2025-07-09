@@ -177,3 +177,99 @@ No, just because the p-value is small doesn't mean the coefficient is non-zero. 
 Homework Reflection 8
 
 Include the code you used to solve the two coding quiz problems and write about the obstacles / challenges / insights you encountered while solving them.
+
+The first problem invloved finding the ATE from File 8.1 using inverse probability weighting. Most obstacles faced were code troubleshooting and debugging, related to resizing the confounder dataframe for fitting to the model. Otherwise, the problem was straightforward.
+
+'''python
+# Find the average treatment effect with inverse probability weighting
+def average_treatment_effect(df, treatment_col, outcome_col, confounder_col):
+       # Initialize the logistic regression model
+       model = LogisticRegression()
+
+       # reshape the dataframe to fit the model
+       Z = df[confounder_col].values.reshape(-1,1)
+       model.fit(Z, df[treatment_col])
+
+       # Calculate the propensity score
+       df['propensity_score'] = model.predict_proba(Z)[:, 1]
+       # Calculate the weights
+       df['weights'] = np.where(df[treatment_col] == 1, 1 / df['propensity_score'], 1 / (1 - df['propensity_score']))
+
+       # Calculate the weighted means
+       treated = df[df[treatment_col] == 1]
+       control = df[df[treatment_col] == 0]
+
+       # Calculate the ATE
+       treated_mean = (treated[outcome_col] * treated['weights']).sum() / treated['weights'].sum()
+       control_mean = (control[outcome_col] * control['weights']).sum() / control['weights'].sum()
+       ate = treated_mean - control_mean
+
+       print(f"ATE: {ate}, Treated Mean: {treated_mean}, Control Mean: {control_mean}")
+       return df, ate, treated, control
+'''
+
+The second problem involved finding the ATE from File 8.2 through matching treated units to control units using the Mahalanobis Distance. The Mahalanobis distance is a measure of the distance between a point and a distribution, which is useful for matching treated units to control units. This question was the more challenging of the two as more research and troubleshooting was required. Finding the ATE was similar to the first problem, but the matching process required more understanding of the distance matching in the inverse covariance matrix.
+The second part of analyzing File 8.2 asked for the nearest Z1 and Z2 values of the treated item with the least common support, which means finding the control unit that is closest in terms of the covariates. After consulting with the LF's on Yellowdig, the question might have been phrased incorrectly, as the nearest covariates were not necessarily the nearest treated unit. Instead, the question was asking for the nearest Z1 and Z2 of a treated unit that was furthest away from a control unit. This was a bit confusing, but after some clarification, it made more sense.
+
+'''python
+def match_treated_to_control(df):
+    from scipy.spatial.distance import cdist
+
+    # Separate treated and untreated groups
+    treated = df[df['X'] == 1].copy()
+    control = df[df['X'] == 0].copy()
+
+    # Create a matrix of the confounders
+    Z = df[['Z1', 'Z2']].values
+
+    # Calculate the covariance matrix of the confounders
+    cov_matrix = np.cov(Z.T)
+    inv_cov_matrix = np.linalg.inv(cov_matrix)
+
+    # Calculate the Mahalanobis distance matrix
+    # Rows = treated units, Columns = control units
+    distance_matrix = cdist(treated[['Z1', 'Z2']], control[['Z1', 'Z2']], 
+                           metric='mahalanobis', VI=inv_cov_matrix)
+
+    # Find the closest control for each treated unit
+    closest_control_indices = np.argmin(distance_matrix, axis=1)
+    
+    # Get the minimum distance for each treated unit to its nearest control
+    min_distances_to_controls = np.min(distance_matrix, axis=1)
+    
+    # Find the treated unit with the MAXIMUM minimum distance (least common support)
+    farthest_treated_index = np.argmax(min_distances_to_controls)
+    farthest_distance = min_distances_to_controls[farthest_treated_index]
+    
+    # Get the treated unit with least common support
+    treated_reset = treated.reset_index(drop=True)
+    farthest_treated_unit = treated_reset.iloc[farthest_treated_index]
+
+    # Find the specific control unit closest to this farthest treated unit
+    closest_control_to_farthest = closest_control_indices[farthest_treated_index]
+    control_reset = control.reset_index(drop=True)
+    nearest_control_unit = control_reset.iloc[closest_control_to_farthest]
+
+    # Get Y values of matched controls for ALL treated units
+    treated_reset['matched_control_Y'] = control_reset.iloc[closest_control_indices]['Y'].values
+    treated_reset['mahalanobis_distance'] = min_distances_to_controls
+
+    # Calculate the ATE
+    ate = (treated_reset['Y'] - treated_reset['matched_control_Y']).mean()
+
+    print(f"ATE: {ate:.4f}")
+    print(f"\nTreated unit with least common support (farthest from any control):")
+    print(f"  Treated Index: {farthest_treated_index}")
+    print(f"  Z1: {farthest_treated_unit['Z1']:.4f}")
+    print(f"  Z2: {farthest_treated_unit['Z2']:.4f}")
+    print(f"  Y: {farthest_treated_unit['Y']:.4f}")
+    print(f"  Distance to nearest control: {farthest_distance:.4f}")
+    print()
+    print(f"Its nearest control unit:")
+    print(f"  Control Index: {closest_control_to_farthest}")
+    print(f"  Z1: {nearest_control_unit['Z1']:.4f}")
+    print(f"  Z2: {nearest_control_unit['Z2']:.4f}")
+    print(f"  Y: {nearest_control_unit['Y']:.4f}")
+    
+    return treated_reset, ate, farthest_treated_unit, nearest_control_unit, farthest_distance
+'''
