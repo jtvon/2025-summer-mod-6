@@ -3,8 +3,155 @@ Homework Reflection 9
 1. Write some code that will use a simulation to estimate the standard deviation of the coefficient when there is heteroskedasticity.  
 Compare these standard errors to those found via statsmodels OLS or a similar linear regression model.
 
+''' python
+# Create a simulated dataset with heteroskedasticity
+def simulate(n_simulations=1000, high_corr=False):
+    np.random.seed(42)
+    coefficients = []
+    se_regular = []
+    se_robust = []
+
+    for i in range(n_simulations):
+
+        # Generate data for each simulation
+        W = np.random.normal(0, 1, 1000)
+        X = W + np.random.normal(0, 1, 1000)
+
+        # Introduce heteroskedasticity
+        error = np.random.normal(0, 3 * np.abs(X), 1000)
+        Y = 2 * X - W + np.random.normal(0, 10, 1000) + error
+
+        # Create DataFrame and run regression
+        df = pd.DataFrame({'Y': Y, 'X': X, 'W': W})
+        const_X = sm.add_constant(df[['X', 'W']])
+        model = sm.OLS(df['Y'], const_X).fit()
+
+        # Store the coefficents, and standard errors
+        coefficients.append(model.params['X'])
+        se_regular.append(model.bse['X'])
+
+        # Fit model with robust standard errors (heteroskedasticity-consistent)
+        model_robust = sm.OLS(df['Y'], const_X).fit(cov_type='HC3')
+        se_robust.append(model_robust.bse['X'])
+
+    # Calculate empirical standard deviation (true standard error)
+    empirical_std = np.std(coefficients)
+    
+    # Calculate average of the estimated standard errors
+    avg_se_regular = np.mean(se_regular)
+    avg_se_robust = np.mean(se_robust)
+    
+    return {
+        'coefficients': coefficients,
+        'empirical_std': empirical_std,
+        'avg_se_regular': avg_se_regular,
+        'avg_se_robust': avg_se_robust,
+        'se_regular_all': se_regular,
+        'se_robust_all': se_robust
+    }
+
+# # Run the simulation
+results = simulate(n_simulations=1000)
+
+print("=== Heteroskedasticity Analysis Results ===")
+print(f"True coefficient value: 2.0")
+print(f"Empirical mean of estimates: {np.mean(results['coefficients']):.4f}")
+print(f"Empirical standard deviation: {results['empirical_std']:.4f}")
+print()
+print("Standard Error Estimates:")
+print(f"Regular OLS SE (average): {results['avg_se_regular']:.4f}")
+print(f"Robust SE (average): {results['avg_se_robust']:.4f}")
+print()
+print("Comparison to Empirical Standard Deviation:")
+print(f"Regular OLS SE / Empirical SD: {results['avg_se_regular'] / results['empirical_std']:.4f}")
+print(f"Robust SE / Empirical SD: {results['avg_se_robust'] / results['empirical_std']:.4f}")
+print()
+
+# Show which is closer to the true standard deviation
+regular_diff = abs(results['avg_se_regular'] - results['empirical_std'])
+robust_diff = abs(results['avg_se_robust'] - results['empirical_std'])
+
+print(f"Absolute difference from empirical SD:")
+print(f"Regular OLS: {regular_diff:.4f}")
+print(f"Robust SE: {robust_diff:.4f}")
+
+if robust_diff < regular_diff:
+    print("Robust standard errors are closer to the true standard deviation")
+else:
+    print("Regular OLS standard errors are closer to the true standard deviation")
+'''
+
 2. Write some code that will use a simulation to estimate the standard deviation of the coefficient when errors are highly correlated / non-independent.
 Compare these standard errors to those found via statsmodels OlS or a similar linear regression model.
 
 Show that if the correlation between coefficients is high enough, then the estimated standard deviation of the coefficient, using bootstrap errors, 
 might not match that found by a full simulation of the Data Generating Process.  (This can be fixed if you have a huge amount of data for the bootstrap simulation.)
+
+'''python
+# Simulate with highly correlated errors and compare bootstrap SE to simulation SE
+def simulate_high_corr(n_simulations=1000):
+    np.random.seed(42)
+    coefficients = []
+    se_regular = []
+    se_robust = []
+
+    for i in range(n_simulations):
+
+        # Generate highly correlated errors
+        W = np.random.normal(0, 1, 1000)
+        X = W + np.random.normal(0, 1, 1000)
+        error = np.random.normal(0, 1, 1000)
+
+        # Add strong autocorrelation to error
+        error = 0.9 * np.roll(error, 1) + error
+        Y = 2 * X - W + np.random.normal(0, 10, 1000) + error
+
+        # Create DataFrame and run regression
+        df = pd.DataFrame({'Y': Y, 'X': X, 'W': W})
+        const_X = sm.add_constant(df[['X', 'W']])
+        model = sm.OLS(df['Y'], const_X).fit()
+
+        # Store the coefficients and standard errors
+        coefficients.append(model.params['X'])
+        se_regular.append(model.bse['X'])
+        model_robust = sm.OLS(df['Y'], const_X).fit(cov_type='HC3')
+        se_robust.append(model_robust.bse['X'])
+
+    empirical_std = np.std(coefficients)
+    avg_se_regular = np.mean(se_regular)
+    avg_se_robust = np.mean(se_robust)
+    
+    return empirical_std, avg_se_regular, avg_se_robust, coefficients
+
+# Run the simulation for highly correlated errors
+empirical_std, avg_se_regular, avg_se_robust, coeffs = simulate_high_corr(n_simulations=1000)
+
+# Now, run a single simulation and estimate SE using bootstrap
+np.random.seed(42)
+W = np.random.normal(0, 1, 1000)
+X = W + np.random.normal(0, 1, 1000)
+error = np.random.normal(0, 1, 1000)
+error = 0.9 * np.roll(error, 1) + error
+Y = 2 * X - W + np.random.normal(0, 10, 1000) + error
+df = pd.DataFrame({'Y': Y, 'X': X, 'W': W})
+const_X = sm.add_constant(df[['X', 'W']])
+
+# Bootstrap standard error
+n_boot = 500
+boot_coefs = []
+for _ in range(n_boot):
+    idx = np.random.choice(len(df), len(df), replace=True)
+    sample = df.iloc[idx]
+    model = sm.OLS(sample['Y'], sm.add_constant(sample[['X', 'W']])).fit()
+    boot_coefs.append(model.params['X'])
+bootstrap_se = np.std(boot_coefs)
+
+print("=== Highly Correlated Errors Analysis ===")
+print(f"Empirical std from simulation: {empirical_std:.4f}")
+print(f"Average OLS SE: {avg_se_regular:.4f}")
+print(f"Average robust SE: {avg_se_robust:.4f}")
+print(f"Bootstrap SE from one sample: {bootstrap_se:.4f}")
+print()
+print("Bootstrap SE / Empirical SD: {:.4f}".format(bootstrap_se / empirical_std))
+print("If this ratio is far from 1, bootstrap SE does not match simulation SE due to high correlation.")
+'''
